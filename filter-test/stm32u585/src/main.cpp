@@ -34,7 +34,7 @@ const int DAC_MID = 2048;
 const int DAC_AMP = 900;
 
 // Maximum captured samples
-const int MAX_N = 32768;
+const int MAX_N = 65536;
 
 float x_buf[MAX_N];
 float y_buf[MAX_N];
