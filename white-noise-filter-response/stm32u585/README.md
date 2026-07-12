@@ -32,13 +32,13 @@ $$
 where
 
 $$
-S_{xy}(f)=\operatorname{average}\left(X^*(f)Y(f)\right)
+S_{xy}(f)=\mathrm{avg}\left(X^*(f)Y(f)\right)
 $$
 
 and
 
 $$
-S_{xx}(f)=\operatorname{average}\left(X^*(f)X(f)\right).
+S_{xx}(f)=\mathrm{avg}\left(X^*(f)X(f)\right).
 $$
 
 This gives a fast broadband estimate of the magnitude, phase, group delay, and coherence of the embedded filter.
@@ -79,7 +79,7 @@ $$
 The digital filter is then executed as:
 
 $$
-y[n] = \operatorname{filter}(x[n]).
+y[n] = \mathrm{filter}(x[n]).
 $$
 
 The STM32 stores both signals:
@@ -385,23 +385,23 @@ The signal is split into overlapping blocks. For each block:
 For one block:
 
 $$
-X(f) = \operatorname{FFT}\{x[n]\},
+X(f) = \mathrm{FFT}\{x[n]\},
 $$
 
 $$
-Y(f) = \operatorname{FFT}\{y[n]\}.
+Y(f) = \mathrm{FFT}\{y[n]\}.
 $$
 
 The input auto-spectrum estimate is:
 
 $$
-S_{xx}(f) = \operatorname{average}\left(X^*(f)X(f)\right).
+S_{xx}(f) = \mathrm{avg}\left(X^*(f)X(f)\right).
 $$
 
 The input-output cross-spectrum estimate is:
 
 $$
-S_{xy}(f) = \operatorname{average}\left(X^*(f)Y(f)\right).
+S_{xy}(f) = \mathrm{avg}\left(X^*(f)Y(f)\right).
 $$
 
 Then the H1 estimator is:
@@ -443,7 +443,7 @@ $$
 The unwrapped phase is obtained by removing \(360^\circ\) jumps between neighboring frequency bins:
 
 $$
-\phi_{\text{unwrapped}}(f)=\operatorname{unwrap}(\angle H_1(f)).
+\phi_{\text{unwrapped}}(f)=\mathrm{unwrap}(\angle H_1(f)).
 $$
 
 Wrapped phase is useful for conventional Bode plots.
@@ -488,7 +488,7 @@ $$
 where:
 
 $$
-S_{yy}(f) = \operatorname{average}\left(Y^*(f)Y(f)\right).
+S_{yy}(f) = \mathrm{avg}\left(Y^*(f)Y(f)\right).
 $$
 
 Coherence satisfies:
@@ -690,7 +690,7 @@ $$
 The filter output is:
 
 $$
-y[n] = \operatorname{filter}(x[n]).
+y[n] = \mathrm{filter}(x[n]).
 $$
 
 The PC estimates the frequency response using:
