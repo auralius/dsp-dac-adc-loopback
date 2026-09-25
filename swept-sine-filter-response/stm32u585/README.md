@@ -647,7 +647,7 @@ The sine and cosine projections also provide phase information.
 The input phase is estimated from the input sine/cosine projections:
 
 $$
-\phi_x = \operatorname{atan2}(X_c, X_s).
+\phi_x = \mathrm{atan2}(X_c, X_s).
 $$
 
 This gives the phase of the input signal relative to the generated sine reference.
@@ -659,7 +659,7 @@ This gives the phase of the input signal relative to the generated sine referenc
 The output phase is similarly estimated as:
 
 $$
-\phi_y = \operatorname{atan2}(Y_c, Y_s).
+\phi_y = \mathrm{atan2}(Y_c, Y_s).
 $$
 
 
@@ -810,9 +810,7 @@ $$
 The phase response is:
 
 $$
-\angle H(f) = \operatorname{atan2}(Y_c,Y_s) - \operatorname{atan2}(X_c,X_s).
+\angle H(f) = \mathrm{atan2}(Y_c,Y_s) - \mathrm{atan2}(X_c,X_s).
 $$
 
 This gives an experimental frequency response of the actual filter running on the STM32.
-
-
