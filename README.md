@@ -50,10 +50,10 @@ The STM32 acts mainly as a deterministic waveform generator and data-acquisition
 The current RLC setup uses:
 
 ```text
-                    R              L
-PA4 / DAC1_OUT1 ---/\/\----------LLLL----------+---- Vc
+                     R             L
+PA4 / DAC1_OUT1 --/\/\/\/---------LLLL----------+---- Vc
         |                                       |
-        |                                       C
+        |                                      === C
         |                                       |
 PA1 / ADC -------------------------------- Vin  |
                                                 |
@@ -69,13 +69,15 @@ A less compact but more explicit view is:
 PA4 / DAC1_OUT1 ---o---/\/\/\/-------LLLL---------o---- Vc
                    |                              |
                    |                              |
-PA1 / ADC ----------                              C = 470 nF
-        Vin                                        |
-                                                   |
-PA0 / ADC -----------------------------------------o
-        Vc                                         |
-                                                  GND
+PA1 / ADC ----------                             === C = 470 nF
+        Vin                                       |
+                                                  |
+PA0 / ADC ----------------------------------------o
+        Vc                                        |
+                                                 GND
 ```
+
+The inductor's internal resistance is approximately 300 ohm.
 
 ### STM32 pin assignments
 
