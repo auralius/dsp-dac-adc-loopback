@@ -44,3 +44,10 @@ The build uses `-O3`; `-ffast-math` and forced loop unrolling are intentionally 
 ## Reliability update
 
 The USB CDC transmitter now handles partial `Serial.write()` returns and sends ADC payloads in 256-byte chunks. The host sine timeout is also increased to 12 s. This prevents intermittent truncated low-frequency sine frames, which are the largest records in a sweep.
+
+## Some results
+
+<img src="./step.png" width="600">
+
+<img src="./frf.png" width="600">
+
