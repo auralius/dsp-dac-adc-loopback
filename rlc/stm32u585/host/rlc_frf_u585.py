@@ -102,7 +102,7 @@ def single_frequency_frf(vin: np.ndarray, vc: np.ndarray, fs: float, freq: float
     coherent_gain = np.sum(w) / 2.0
     vin_amp = abs(X) / coherent_gain
     vc_amp = abs(Y) / coherent_gain
-    return mag_db, phase_deg, vin_amp, vc_amp
+    return H, mag_db, phase_deg, vin_amp, vc_amp
 
 
 def prbs_periodic_frf(vin: np.ndarray, vc: np.ndarray, fs: float,
@@ -161,7 +161,7 @@ def prbs_periodic_frf(vin: np.ndarray, vc: np.ndarray, fs: float,
 
     # DC is not useful. Keep the same practical band as the stepped-sine GUI.
     keep = (freqs >= 5.0) & (freqs <= 5000.0)
-    return freqs[keep], mag_db[keep], phase_deg[keep], coherence[keep]
+    return freqs[keep], H[keep], mag_db[keep], phase_deg[keep], coherence[keep]
 
 
 class FrfApp:
@@ -238,9 +238,17 @@ class FrfApp:
         self.progress = ttk.Progressbar(root, mode="determinate")
         self.progress.pack(fill="x", padx=10, pady=(0, 4))
 
-        self.figure = Figure(figsize=(10.2, 6.2), dpi=100)
-        self.ax_mag = self.figure.add_subplot(211)
-        self.ax_phase = self.figure.add_subplot(212, sharex=self.ax_mag)
+        self.figure = Figure(figsize=(11.2, 6.8), dpi=100)
+        gs = self.figure.add_gridspec(
+            2, 2,
+            width_ratios=(1.45, 1.0),
+            height_ratios=(1.0, 1.0),
+            wspace=0.30,
+            hspace=0.16,
+        )
+        self.ax_mag = self.figure.add_subplot(gs[0, 0])
+        self.ax_phase = self.figure.add_subplot(gs[1, 0], sharex=self.ax_mag)
+        self.ax_nyquist = self.figure.add_subplot(gs[:, 1])
 
         plot_frame = ttk.Frame(root)
         plot_frame.pack(fill="both", expand=True, padx=10, pady=5)
@@ -348,13 +356,15 @@ class FrfApp:
                     rec = read_record(port)
                     if rec["kind"] != "sine":
                         raise ValueError("Expected sine frame from MCU")
-                    mag_db, phase_deg, vin_amp, vc_amp = single_frequency_frf(
+                    H, mag_db, phase_deg, vin_amp, vc_amp = single_frequency_frf(
                         rec["vin"], rec["vc"], rec["rate"], rec["frequency_hz"]
                     )
                     self.current_rows.append({
                         "frequency_hz": rec["frequency_hz"],
                         "magnitude_db": mag_db,
                         "phase_deg": phase_deg,
+                        "h_real": float(H.real),
+                        "h_imag": float(H.imag),
                         "coherence": float("nan"),
                         "sample_rate_hz": rec["rate"],
                         "vin_amp_v": vin_amp,
@@ -405,7 +415,7 @@ class FrfApp:
                 rec = read_record(port)
                 if rec["kind"] != "prbs":
                     raise ValueError("Expected PRBS frame from MCU")
-                freqs, mags, phases, coh = prbs_periodic_frf(
+                freqs, H, mags, phases, coh = prbs_periodic_frf(
                     rec["vin"], rec["vc"], rec["rate"], rec["order"], rec["periods"]
                 )
                 self.current_rows = [
@@ -413,12 +423,14 @@ class FrfApp:
                         "frequency_hz": float(f),
                         "magnitude_db": float(m),
                         "phase_deg": float(p),
+                        "h_real": float(h.real),
+                        "h_imag": float(h.imag),
                         "coherence": float(c),
                         "sample_rate_hz": rec["rate"],
                         "vin_amp_v": float("nan"),
                         "vc_amp_v": float("nan"),
                     }
-                    for f, m, p, c in zip(freqs, mags, phases, coh)
+                    for f, h, m, p, c in zip(freqs, H, mags, phases, coh)
                 ]
                 self.root.after(0, self.finish_prbs_run, order, periods, amp_mv)
         except Exception as exc:
@@ -481,6 +493,7 @@ class FrfApp:
     def redraw(self, include_current=False):
         self.ax_mag.clear()
         self.ax_phase.clear()
+        self.ax_nyquist.clear()
 
         all_runs = list(self.runs)
         if include_current and self.current_rows:
@@ -494,18 +507,62 @@ class FrfApp:
             rows = run["rows"]
             if not rows:
                 continue
+
             freqs = np.array([r["frequency_hz"] for r in rows], dtype=float)
             mags = np.array([r["magnitude_db"] for r in rows], dtype=float)
             phases = np.array([r["phase_deg"] for r in rows], dtype=float)
+
+            h_real = np.array([
+                r.get(
+                    "h_real",
+                    10.0 ** (r["magnitude_db"] / 20.0)
+                    * math.cos(math.radians(r["phase_deg"]))
+                )
+                for r in rows
+            ], dtype=float)
+
+            h_imag = np.array([
+                r.get(
+                    "h_imag",
+                    10.0 ** (r["magnitude_db"] / 20.0)
+                    * math.sin(math.radians(r["phase_deg"]))
+                )
+                for r in rows
+            ], dtype=float)
+
             order = np.argsort(freqs)
-            freqs, mags, phases = freqs[order], mags[order], phases[order]
+            freqs = freqs[order]
+            mags = mags[order]
+            phases = phases[order]
+            h_real = h_real[order]
+            h_imag = h_imag[order]
 
             if run.get("method") == "Stepped Sine":
-                self.ax_mag.semilogx(freqs, mags, marker=".", linewidth=1.2, label=run["label"])
-                self.ax_phase.semilogx(freqs, phases, marker=".", linewidth=1.2, label=run["label"])
+                line, = self.ax_mag.semilogx(
+                    freqs, mags, marker=".", linewidth=1.2, label=run["label"]
+                )
+                run_color = line.get_color()
+                self.ax_phase.semilogx(
+                    freqs, phases, marker=".", linewidth=1.2,
+                    color=run_color, label=run["label"]
+                )
+                self.ax_nyquist.plot(
+                    h_real, h_imag, marker=".", linewidth=1.2,
+                    color=run_color, label=run["label"]
+                )
             else:
-                self.ax_mag.semilogx(freqs, mags, linewidth=1.1, label=run["label"])
-                self.ax_phase.semilogx(freqs, phases, linewidth=1.1, label=run["label"])
+                line, = self.ax_mag.semilogx(
+                    freqs, mags, linewidth=1.1, label=run["label"]
+                )
+                run_color = line.get_color()
+                self.ax_phase.semilogx(
+                    freqs, phases, linewidth=1.1,
+                    color=run_color, label=run["label"]
+                )
+                self.ax_nyquist.plot(
+                    h_real, h_imag, linewidth=1.1,
+                    color=run_color, label=run["label"]
+                )
 
         self.ax_mag.set_ylabel("Magnitude (dB)")
         self.ax_phase.set_ylabel("Phase (deg)")
@@ -513,9 +570,20 @@ class FrfApp:
         self.ax_mag.grid(True, which="both", alpha=0.3)
         self.ax_phase.grid(True, which="both", alpha=0.3)
         self.ax_mag.set_title("RLC frequency response — stacked runs")
+
+        self.ax_nyquist.set_xlabel("Re{H}")
+        self.ax_nyquist.set_ylabel("Im{H}")
+        self.ax_nyquist.set_title("Nyquist plot")
+        self.ax_nyquist.grid(True, alpha=0.3)
+        self.ax_nyquist.axhline(0.0, linewidth=0.8, alpha=0.5)
+        self.ax_nyquist.axvline(0.0, linewidth=0.8, alpha=0.5)
+        self.ax_nyquist.set_aspect("equal", adjustable="datalim")
+
         if all_runs:
             self.ax_mag.legend(loc="best")
             self.ax_phase.legend(loc="best")
+            self.ax_nyquist.legend(loc="best")
+
         self.canvas.draw_idle()
 
     def save_csv(self):
@@ -532,7 +600,8 @@ class FrfApp:
 
         fields = [
             "run", "method", "label", "frequency_hz", "magnitude_db",
-            "phase_deg", "coherence", "sample_rate_hz", "vin_amp_v", "vc_amp_v"
+            "phase_deg", "h_real", "h_imag", "coherence",
+            "sample_rate_hz", "vin_amp_v", "vc_amp_v"
         ]
         with open(path, "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=fields)
