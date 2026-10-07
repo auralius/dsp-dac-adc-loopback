@@ -1,4 +1,4 @@
-![](./loopback.png)
+<img src="./loopback.png" width="400">
 
 # Hardware Setup: STM32 DAC–ADC Loopback
 
@@ -42,7 +42,8 @@ The STM32 acts mainly as a deterministic waveform generator and data-acquisition
 
 ## Hardware Photo
 
-![](./rlc.png)
+<img src="./rlc.png" width="400">
+
 
 ## RLC Wiring
 
