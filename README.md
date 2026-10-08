@@ -50,31 +50,14 @@ The STM32 acts mainly as a deterministic waveform generator and data-acquisition
 The current RLC setup uses:
 
 ```text
-                     R             L
-PA4 / DAC1_OUT1 --/\/\/\/---------LLLL----------+---- Vc
-        |                                       |
-        |                                      === C
-        |                                       |
-PA1 / ADC -------------------------------- Vin  |
-                                                |
-PA0 / ADC --------------------------------------+ 
-                                                |
-                                               GND
-```
-
-A less compact but more explicit view is:
-
-```text
-                    R = 22 ohm       L = 250 mH
-PA4 / DAC1_OUT1 ---o---/\/\/\/-------LLLL---------o---- Vc
-                   |                              |
-                   |                              |
-PA1 / ADC ----------                             === C = 470 nF
-        Vin                                       |
-                                                  |
-PA0 / ADC ----------------------------------------o
-        Vc                                        |
-                                                 GND
+                         R             L
+PA4 / DAC1_OUT1 +-->---/\/\/\/-------LLLL----------+----> Vc at PA0 / ADC
+                |                                  |
+                |                                 === C
+                |                                  |
+                + ----> Vin at PA1 / ADC           |
+                                                   | 
+                                                  GND
 ```
 
 The inductor's internal resistance is approximately 300 ohm.
